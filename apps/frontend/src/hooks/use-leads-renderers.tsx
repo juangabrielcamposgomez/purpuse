@@ -78,7 +78,7 @@ export function useLeadsRenderers(
         status: z.enum(["Upcoming", "Active", "Completed"]),
       })),
     }),
-    render: ({ parameters }) => <StrategicPositioning roadmap={parameters.roadmap} />,
+    render: ({ parameters }) => <StrategicPositioning roadmap={parameters.roadmap || []} />,
   });
 
   useRenderTool({
