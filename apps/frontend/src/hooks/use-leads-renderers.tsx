@@ -88,9 +88,9 @@ export function useLeadsRenderers(
     }),
     render: ({ parameters }) => (
       <OnboardingForm
-        specialty={parameters.specialty}
+        specialty={parameters.specialty || ""}
         onComplete={(data) => {
-          injectPrompt(`User completed onboarding for ${parameters.specialty}: ${JSON.stringify(data)}. Generate the initial dashboard and growth strategy.`);
+          injectPrompt(`User completed onboarding for ${parameters.specialty || "professional"}: ${JSON.stringify(data)}. Generate the initial dashboard and growth strategy.`);
         }}
       />
     ),
@@ -107,7 +107,7 @@ export function useLeadsRenderers(
         relevance: z.string(),
       })),
     }),
-    render: ({ parameters }) => <NetworkingRecommendations recommendations={parameters.recommendations} />,
+    render: ({ parameters }) => <NetworkingRecommendations recommendations={parameters.recommendations || []} />,
   });
 
   useRenderTool({
@@ -121,7 +121,7 @@ export function useLeadsRenderers(
         score: z.number(),
       }),
     }),
-    render: ({ parameters }) => <SleepMetricsDashboard data={parameters.data} />,
+    render: ({ parameters }) => parameters.data ? <SleepMetricsDashboard data={parameters.data} /> : <></>,
   });
 
   useRenderTool({
@@ -135,7 +135,7 @@ export function useLeadsRenderers(
         cta: z.string(),
       }),
     }),
-    render: ({ parameters }) => <ContentStrategyCard data={parameters.data} />,
+    render: ({ parameters }) => parameters.data ? <ContentStrategyCard data={parameters.data} /> : <></>,
   });
 
   useRenderTool({
