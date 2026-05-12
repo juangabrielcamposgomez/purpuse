@@ -24,7 +24,7 @@ const agent = new LangGraphAgent({
 
 const runtime = new CopilotRuntime({
   intelligence,
-  identifyUser: () => ({ id: "default", name: "Purpose360 User" }),
+  identifyUser: () => ({ id: "default", name: "Purpose360 AI Professional" }),
   licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN || process.env.NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN,
   agents: { default: agent },
   openGenerativeUI: true,
