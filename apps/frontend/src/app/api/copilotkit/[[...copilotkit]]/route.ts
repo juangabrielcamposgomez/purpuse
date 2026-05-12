@@ -5,7 +5,7 @@ import {
 } from "@copilotkit/runtime/v2";
 
 const intelligence = new CopilotKitIntelligence({
-  apiKey: process.env.INTELLIGENCE_API_KEY,
+  apiKey: process.env.INTELLIGENCE_API_KEY || "",
   apiUrl: process.env.INTELLIGENCE_API_URL || (process.env.NODE_ENV === 'production' ? "https://api.cloud.copilotkit.ai/v1" : "http://localhost:4203"),
 });
 
