@@ -12,23 +12,7 @@ loadEnvConfig(path.resolve(here, "../.."));
 const BFF_URL = process.env.BFF_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:4000');
 
 const nextConfig: NextConfig = {
-  // Proxy CopilotKit runtime requests to the Hono BFF (apps/bff).
-  // If BFF_URL is empty (production), we assume the BFF is mapped to /api/copilotkit 
-  // via vercel.json or the BFF is hosted on the same domain.
-  async rewrites() {
-    if (!BFF_URL) return [];
-    
-    return [
-      {
-        source: "/api/copilotkit/:path*",
-        destination: `${BFF_URL}/api/copilotkit/:path*`,
-      },
-      {
-        source: "/api/copilotkit",
-        destination: `${BFF_URL}/api/copilotkit`,
-      },
-    ];
-  },
+  // No rewrites needed, API is now local at /api/copilotkit
 };
 
 export default nextConfig;
