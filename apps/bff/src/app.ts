@@ -29,7 +29,7 @@ export const app = createCopilotEndpoint({
   runtime: new CopilotRuntime({
     intelligence,
     identifyUser: () => ({ id: "default", name: "Hackathon User" }),
-    licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN,
+    licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN || process.env.NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN,
     agents: { default: agent },
     openGenerativeUI: true,
     a2ui: { injectA2UITool: false },
