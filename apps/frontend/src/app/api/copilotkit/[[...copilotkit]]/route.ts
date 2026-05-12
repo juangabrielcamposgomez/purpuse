@@ -5,11 +5,13 @@ import {
 } from "@copilotkit/runtime/v2";
 import { LangGraphAgent } from "@copilotkit/runtime/langgraph";
 
+/*
 const intelligence = new CopilotKitIntelligence({
   apiKey: process.env.INTELLIGENCE_API_KEY || "",
   apiUrl: process.env.INTELLIGENCE_API_URL || (process.env.NODE_ENV === 'production' ? "https://api.cloud.copilotkit.ai/v1" : "http://localhost:4203"),
   wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL || (process.env.NODE_ENV === 'production' ? "wss://api.cloud.copilotkit.ai/v1" : "ws://localhost:4403"),
 });
+*/
 
 const agent = new LangGraphAgent({
   deploymentUrl: process.env.LANGGRAPH_DEPLOYMENT_URL || "http://localhost:8123",
@@ -17,7 +19,7 @@ const agent = new LangGraphAgent({
 });
 
 const runtime = new CopilotRuntime({
-  intelligence,
+  // intelligence,
   identifyUser: () => ({ id: "default", name: "Purpose360 AI Professional" }),
   licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN || process.env.NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN,
   agents: {
