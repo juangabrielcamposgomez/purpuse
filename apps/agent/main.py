@@ -57,9 +57,9 @@ backend_tools = load_notion_tools() + load_db_tools()
 _integration_status = _format_integration_status()
 SYSTEM_PROMPT = build_system_prompt(_integration_status)
 
-# Force the runtime to gemini-flash-deep for this test
+# Force the runtime to gemini-flash-react for speed and stability
 graph = build_graph(
-    "gemini-flash-deep",
+    "gemini-flash-react",
     tools=backend_tools,
     system_prompt=SYSTEM_PROMPT,
 )
