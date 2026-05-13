@@ -13,14 +13,26 @@ const intelligence = new CopilotKitIntelligence({
 });
 */
 
+const langgraphUrl = process.env.LANGGRAPH_DEPLOYMENT_URL || "http://localhost:8133";
+
+// Ensure URL is absolute and has protocol
+const validatedUrl = langgraphUrl.startsWith("http") 
+  ? langgraphUrl 
+  : `https://${langgraphUrl}`;
+
+console.log(`[CopilotKit] Initializing with Agent URL: ${validatedUrl}`);
+
 const agent = new LangGraphAgent({
-  deploymentUrl: process.env.LANGGRAPH_DEPLOYMENT_URL || "http://localhost:8123",
+  deploymentUrl: validatedUrl,
   graphId: "default",
 });
 
 const runtime = new CopilotRuntime({
-  // intelligence,
-  identifyUser: () => ({ id: "default", name: "Purpose360 AI Professional" }),
+  identifyUser: () => ({ 
+    id: "default", 
+    name: "Purpose360 AI Professional",
+    role: "Medical Expert"
+  }),
   licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN || process.env.NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN,
   agents: {
     default: agent,
@@ -34,12 +46,23 @@ const baseHandler = createCopilotRuntimeHandler({
 });
 
 const handler = async (req: Request) => {
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`[CopilotKit][${requestId}] Incoming ${req.method} request to /api/copilotkit`);
+
   try {
     const res = await baseHandler(req);
+    console.log(`[CopilotKit][${requestId}] Request processed successfully`);
     return res;
   } catch (error: any) {
-    console.error("[CopilotKit] Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    console.error(`[CopilotKit][${requestId}] CRITICAL ERROR:`, error);
+    return new Response(
+      JSON.stringify({ 
+        error: "Internal Server Error in CopilotKit Runtime",
+        message: error.message,
+        requestId
+      }), 
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 };
 

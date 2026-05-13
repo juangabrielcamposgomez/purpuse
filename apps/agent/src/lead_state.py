@@ -122,62 +122,43 @@ class LeadStateMiddleware(AgentMiddleware[LeadCanvasState, Any]):  # type: ignor
     state_schema = LeadCanvasState
 
     def before_agent(self, state: Any, runtime: Any) -> dict[str, Any] | None:
-        """Hydrate empty canvas state from the lead store on first turn.
-
-        Returns ``None`` (no update) when:
-          - the thread already has leads (user has imported, or a previous
-            turn within this thread hydrated)
-          - the lead store is empty / errored — the user should still be
-            able to call ``fetch_notion_leads`` explicitly and see the
-            failure surface there, not silently here.
+        """Hydrate empty canvas state.
+        
+        Optimized: We only hydrate automatically if using the LOCAL store
+        to prevent blocking Notion calls from causing Vercel timeouts.
         """
-        # State arrives as a dict at runtime even though the schema is a
-        # TypedDict; access fields defensively.
         existing_leads = (state or {}).get("leads") if isinstance(state, dict) else None
         if existing_leads:
             return None
 
         try:
             from lead_store import get_store
-
             store = get_store()
+            
+            # CRITICAL: Do NOT block on Notion during the middleware turn.
+            # If Notion is active, let the agent/user trigger the fetch explicitly.
+            if not store.is_local():
+                return None
+                
             rows = store.list_leads()
         except Exception:
-            # Boot the thread empty and let the user explicitly import —
-            # surfacing the error there is more discoverable than failing
-            # silently inside a middleware hook.
             return None
 
         if not rows:
             return None
 
         from collections import Counter
-
-        workshop_counts = Counter(
-            (r.get("workshop") or "Not sure yet") for r in rows
-        )
-        top_workshop, _ = (
-            workshop_counts.most_common(1)[0]
-            if workshop_counts
-            else ("Not sure yet", 0)
-        )
-        source_label = "local starter data" if store.is_local() else "Notion"
-        db_id = (
-            os.getenv("NOTION_LEADS_DATABASE_ID", "")
-            or ("local" if store.is_local() else "")
-        )
-
+        workshop_counts = Counter((r.get("workshop") or "Not sure yet") for r in rows)
+        top_workshop, _ = workshop_counts.most_common(1)[0] if workshop_counts else ("Not sure yet", 0)
+        
         return {
             "leads": rows,
             "header": {
                 "title": "Workshop Lead Triage",
-                "subtitle": (
-                    f"{len(rows)} leads from {source_label} · "
-                    f"top demand: {top_workshop}"
-                ),
+                "subtitle": f"{len(rows)} leads from local starter data",
             },
             "sync": {
-                "databaseId": db_id,
+                "databaseId": "local",
                 "databaseTitle": store.database_title(),
                 "syncedAt": datetime.now(timezone.utc).isoformat(),
             },
