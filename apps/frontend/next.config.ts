@@ -3,16 +3,36 @@ import { fileURLToPath } from "node:url";
 import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
 
-// Load the repo-root .env so vars defined there (BFF_URL, etc.) are visible
-// to next.config.ts and to the dev/prod runtime. Next reads `apps/frontend/.env`
-// after this — local overrides still win when present.
 const here = path.dirname(fileURLToPath(import.meta.url));
 loadEnvConfig(path.resolve(here, "../.."));
 
-const BFF_URL = process.env.BFF_URL || (process.env.NODE_ENV === 'production' ? '' : 'http://localhost:4000');
+const isProduction = process.env.NODE_ENV === 'production';
 
 const nextConfig: NextConfig = {
-  // No rewrites needed, API is now local at /api/copilotkit
+  serverExternalPackages: ["@copilotkit/runtime"],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

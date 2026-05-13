@@ -84,21 +84,10 @@ class _Segment(TypedDict, total=False):
 
 
 def _replace(_left: Any, right: Any) -> Any:
-    """LangGraph reducer that always takes the most recent value.
-
-    Without an explicit reducer, LangGraph would either default to
-    last-write-wins for scalars or raise on conflicting types.
-    """
     return right
 
 
 class LeadCanvasState(AgentState):
-    """Extended agent state for the workshop-lead-triage canvas.
-
-    Each field is `NotRequired` so the agent can boot without all fields
-    set; the frontend's `mergeState` provides defaults on the React side.
-    """
-
     leads: NotRequired[Annotated[list[_Lead], _replace]]
     filter: NotRequired[Annotated[_LeadFilter, _replace]]
     view: NotRequired[Annotated[str, _replace]]
@@ -109,24 +98,11 @@ class LeadCanvasState(AgentState):
     sync: NotRequired[Annotated[_SyncMeta, _replace]]
 
 
-class LeadStateMiddleware(AgentMiddleware[LeadCanvasState, Any]):  # type: ignore[type-arg]
-    """Contributes the lead-canvas state schema and hydrates fresh threads.
-
-    LangGraph merges the state schemas of every middleware in the chain, so
-    inserting this alongside CopilotKitMiddleware adds the lead fields to
-    the graph's state. The ``before_agent`` hook then ensures a fresh
-    thread starts with a populated canvas instead of an empty one — see
-    the module docstring for the full rationale.
-    """
+class LeadStateMiddleware(AgentMiddleware[LeadCanvasState, Any]):
 
     state_schema = LeadCanvasState
 
     def before_agent(self, state: Any, runtime: Any) -> dict[str, Any] | None:
-        """Hydrate empty canvas state.
-        
-        Optimized: We only hydrate automatically if using the LOCAL store
-        to prevent blocking Notion calls from causing Vercel timeouts.
-        """
         existing_leads = (state or {}).get("leads") if isinstance(state, dict) else None
         if existing_leads:
             return None
@@ -134,12 +110,10 @@ class LeadStateMiddleware(AgentMiddleware[LeadCanvasState, Any]):  # type: ignor
         try:
             from lead_store import get_store
             store = get_store()
-            
-            # CRITICAL: Do NOT block on Notion during the middleware turn.
-            # If Notion is active, let the agent/user trigger the fetch explicitly.
+
             if not store.is_local():
                 return None
-                
+
             rows = store.list_leads()
         except Exception:
             return None
@@ -150,11 +124,11 @@ class LeadStateMiddleware(AgentMiddleware[LeadCanvasState, Any]):  # type: ignor
         from collections import Counter
         workshop_counts = Counter((r.get("workshop") or "Not sure yet") for r in rows)
         top_workshop, _ = workshop_counts.most_common(1)[0] if workshop_counts else ("Not sure yet", 0)
-        
+
         return {
             "leads": rows,
             "header": {
-                "title": "Workshop Lead Triage",
+                "title": "Purpose360 AI",
                 "subtitle": f"{len(rows)} leads from local starter data",
             },
             "sync": {

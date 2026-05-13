@@ -5,11 +5,13 @@ import {
 } from "@copilotkit/runtime/v2";
 import { LangGraphAgent } from "@copilotkit/runtime/langgraph";
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const intelligence = new CopilotKitIntelligence({
   apiKey:
     process.env.INTELLIGENCE_API_KEY ?? "cpk_sPRVSEED_seed0privat0longtoken00",
-  apiUrl: process.env.INTELLIGENCE_API_URL ?? (process.env.NODE_ENV === 'production' ? "https://api.cloud.copilotkit.ai/v1" : "http://localhost:4203"),
-  wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL ?? (process.env.NODE_ENV === 'production' ? "wss://api.cloud.copilotkit.ai/v1" : "ws://localhost:4403"),
+  apiUrl: process.env.INTELLIGENCE_API_URL ?? (isProduction ? "https://api.cloud.copilotkit.ai/v1" : "http://localhost:4203"),
+  wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL ?? (isProduction ? "wss://api.cloud.copilotkit.ai/v1" : "ws://localhost:4403"),
 });
 
 const agent = new LangGraphAgent({

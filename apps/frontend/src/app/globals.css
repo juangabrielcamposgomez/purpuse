@@ -285,29 +285,11 @@ html {
   pointer-events: none !important;
 }
 
-/* OPCIÓN NUCLEAR: Borrado total de marca del framework */
+/* Borrado total de marca del framework */
 [class*='copilotKit'], 
 [class*='ck-'], 
 [class*='poweredBy'], 
 [class*='branding'] {
   --ck-branding-display: none !important;
-}
-
-/* Refuerzo de Marca Blanca Purpose360 */
-.copilotKitBranding, 
-.copilotKitPoweredBy,
-.ck-powered-by, 
-.ck-logo,
-[class*='CopilotKitBranding'],
-[class*='poweredBy'],
-[class*='powered-by'],
-[data-testid*='branding'] {
-  display: none !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
-  position: absolute !important;
-  pointer-events: none !important;
 }
 

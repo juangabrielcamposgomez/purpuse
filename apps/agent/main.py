@@ -27,8 +27,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Add src to sys.path so imports work both in IDE (which sees src as root) 
-# and during execution from the apps/agent directory.
 sys.path.append(str(Path(__file__).parent / "src"))
 
 from intelligence_cleanup import wipe_orphan_threads
@@ -39,10 +37,16 @@ from prompts import build_system_prompt
 from runtime import build_graph
 
 
-# Load .env early so GEMINI_API_KEY / NOTION_TOKEN / ANTHROPIC_API_KEY are visible.
-# load_dotenv() # Already loaded by langgraph dev if configured, but safe to keep
+def _select_runtime() -> str:
+    runtime = os.getenv("AGENT_RUNTIME", "gemini-flash-react")
+    valid = {"gemini-flash-deep", "gemini-flash-react", "claude-sonnet-4-6-react", "noop"}
+    if runtime not in valid:
+        print(f"[main] WARN: unknown AGENT_RUNTIME={runtime!r}, using gemini-flash-react", flush=True)
+        return "gemini-flash-react"
+    if runtime == "gemini-flash-deep":
+        print("[main] NOTE: gemini-flash-deep uses deepagents planner — may be slower but more thorough", flush=True)
+    return runtime
 
-# wipe_orphan_threads() # Commented out for stability during debug
 
 def _format_integration_status() -> str:
     try:
@@ -53,26 +57,23 @@ def _format_integration_status() -> str:
     print(f"[lead_store] {line}", flush=True)
     return line
 
+
 backend_tools = load_notion_tools() + load_db_tools()
 _integration_status = _format_integration_status()
 SYSTEM_PROMPT = build_system_prompt(_integration_status)
 
-# Force the runtime to gemini-flash-react for speed and stability
+selected_runtime = _select_runtime()
+print(f"[main] Runtime: {selected_runtime}", flush=True)
+
 graph = build_graph(
-    "gemini-flash-react",
+    selected_runtime,
     tools=backend_tools,
     system_prompt=SYSTEM_PROMPT,
 )
 
 
 def main() -> None:
-    """Entry point for `uv run dev` / `python -m agent`.
-
-    `langgraph dev` is the canonical local-dev runner — this just exists to
-    satisfy the `[project.scripts] dev = "agent:main"` entry point.
-    """
     import subprocess
-
     subprocess.run(
         ["langgraph", "dev", "--port", "8133"],
         check=True,
