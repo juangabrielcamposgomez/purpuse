@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 :root {
@@ -180,24 +180,8 @@ html {
   animation: lead-card-pulse 2s ease-out 1;
 }
 
-/*
-  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Lead-card sync indicators (phase 04 â€” write-back to Notion)
-  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  Driven from app/page.tsx via two Sets (syncingIds / justSyncedIds). The
-  page passes them down so any view (Pipeline, Grid, List) can render the
-  right state on the right card without each view tracking its own.
-
-  - data-syncing="true": a write is in flight. We render a small spinner
-    in the card's top-right corner via a ::after pseudo-element so we
-    don't have to thread a React component through every card.
-  - data-just-synced="true": a write just landed. Flash an emerald ring
-    for 800ms, then the page clears the flag and the card returns to
-    normal styling.
-
   Note: ::after positioning relies on .relative on the card root, which
   LeadCard already sets via its `motion.button` class.
-*/
 
 @keyframes lead-card-spin {
   to {
@@ -260,16 +244,24 @@ html {
 
 .copilotKitAssistantMessage {
   background: white !important;
-  border: 1px solid var(--border) !important;
-  border-radius: 1rem 1rem 1rem 0.25rem !important;
-  color: var(--foreground) !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 12px 12px 12px 4px !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+  margin-bottom: 12px !important;
 }
 
 .copilotKitUserMessage {
-  background: var(--primary) !important;
+  background: #2563eb !important;
   color: white !important;
-  border-radius: 1rem 1rem 0.25rem 1rem !important;
+  border-radius: 12px 12px 4px 12px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Eliminar fondos negros de contenedores internos */
+[class*='CopilotKitMessage'], [class*='copilot-chat-message'] {
+  background: transparent !important;
 }
 
 /* Refuerzo de Marca Blanca Purpose360 */

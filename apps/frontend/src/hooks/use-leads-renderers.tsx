@@ -198,7 +198,7 @@ export function useLeadsRenderers(
       })),
     }),
     render: ({ parameters }) => (
-      <div className="p-6 rounded-2xl bg-black/40 border border-white/10 backdrop-blur-xl text-white">
+      <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm text-slate-900">
         <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
           <span className="size-2 bg-green-500 rounded-full animate-pulse" />
           Hub de Conexiones Sociales
