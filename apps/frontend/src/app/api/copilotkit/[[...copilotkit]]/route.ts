@@ -7,41 +7,42 @@ import { LangGraphAgent } from "@copilotkit/runtime/langgraph";
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-function missing(v: string): boolean {
-  return !process.env[v];
+function warnMissing(v: string): void {
+  if (!process.env[v]) console.log(`[CopilotKit] WARNING: ${v} not set`);
 }
-
-const missingVars: string[] = [];
-if (missing("LANGGRAPH_DEPLOYMENT_URL")) missingVars.push("LANGGRAPH_DEPLOYMENT_URL");
-if (missing("NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN") && missing("COPILOTKIT_LICENSE_TOKEN")) missingVars.push("NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN");
 
 console.log(`[CopilotKit] Production=${isProduction}`);
-if (missingVars.length) {
-  console.log(`[CopilotKit] WARNING: Missing env vars: ${missingVars.join(", ")}`);
-}
 
 const runtimeConfig: any = {
   identifyUser: () => ({
     id: "default",
     name: "Purpose360 AI Professional",
-    role: "Medical Expert"
+    role: "Medical Expert",
   }),
-  licenseToken: process.env.COPILOTKIT_LICENSE_TOKEN || process.env.NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN,
+  licenseToken:
+    process.env.COPILOTKIT_LICENSE_TOKEN ||
+    process.env.NEXT_PUBLIC_COPILOTKIT_LICENSE_TOKEN,
   openGenerativeUI: true,
 };
 
+// ---------------------------------------------------------------------------
+// Intelligence (thread persistence via CopilotKit Cloud)
+// ---------------------------------------------------------------------------
 const intelligenceApiKey = process.env.INTELLIGENCE_API_KEY;
 if (intelligenceApiKey) {
   runtimeConfig.intelligence = new CopilotKitIntelligence({
     apiKey: intelligenceApiKey,
-    apiUrl: process.env.INTELLIGENCE_API_URL || (isProduction ? "https://api.cloud.copilotkit.ai/v1" : "http://localhost:4203"),
-    wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL || (isProduction ? "wss://api.cloud.copilotkit.ai/v1" : "ws://localhost:4403"),
+    apiUrl: process.env.INTELLIGENCE_API_URL || "https://api.cloud.copilotkit.ai/v1",
+    wsUrl: process.env.INTELLIGENCE_GATEWAY_WS_URL || "wss://api.cloud.copilotkit.ai/v1",
   });
-  console.log(`[CopilotKit] Intelligence enabled (cloud=${isProduction})`);
+  console.log(`[CopilotKit] Intelligence enabled (cloud)`);
 } else {
-  console.log(`[CopilotKit] Intelligence disabled — set INTELLIGENCE_API_KEY for thread persistence`);
+  warnMissing("INTELLIGENCE_API_KEY");
 }
 
+// ---------------------------------------------------------------------------
+// LangGraph Agent
+// ---------------------------------------------------------------------------
 const langgraphUrl = process.env.LANGGRAPH_DEPLOYMENT_URL || "";
 const validatedUrl = langgraphUrl.startsWith("http")
   ? langgraphUrl
@@ -62,9 +63,31 @@ if (validatedUrl) {
   };
   console.log(`[CopilotKit] Agent configured: ${validatedUrl}`);
 } else {
-  console.log(`[CopilotKit] WARNING: No LangGraph agent — set LANGGRAPH_DEPLOYMENT_URL`);
+  warnMissing("LANGGRAPH_DEPLOYMENT_URL");
 }
 
+// ---------------------------------------------------------------------------
+// MCP Apps (Manufact widgets)
+// ---------------------------------------------------------------------------
+const mcpUrl = process.env.MCP_SERVER_URL || "";
+if (mcpUrl) {
+  runtimeConfig.mcpApps = {
+    servers: [
+      {
+        type: "http" as const,
+        url: mcpUrl,
+        serverId: "manufact_cloud",
+      },
+    ],
+  };
+  console.log(`[CopilotKit] MCP server configured: ${mcpUrl}`);
+} else if (isProduction) {
+  warnMissing("MCP_SERVER_URL");
+}
+
+// ---------------------------------------------------------------------------
+// Runtime
+// ---------------------------------------------------------------------------
 const runtime = new CopilotRuntime(runtimeConfig);
 
 const baseHandler = createCopilotRuntimeHandler({
@@ -81,6 +104,34 @@ const handler = async (req: Request) => {
     if (!res.ok) {
       const text = await res.clone().text();
       console.error(`[CopilotKit][${requestId}] HTTP ${res.status}: ${text.slice(0, 500)}`);
+
+      // Rewrite known 5xx error bodies into structured payloads
+      if (res.status >= 500) {
+        const isThreadFkey =
+          text.includes("threads_user_id_fkey") ||
+          (text.includes("Failed to initialize thread") && text.includes("user_id"));
+        if (isThreadFkey) {
+          return new Response(
+            JSON.stringify({
+              error: "Postgres user seed missing",
+              hint: "Contact support to seed the default user.",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
+        const isThreadLocked =
+          text.includes("AgentThreadLockedError") ||
+          /Thread\s+[0-9a-f-]{36}\s+is locked/i.test(text);
+        if (isThreadLocked) {
+          return new Response(
+            JSON.stringify({
+              error: "Thread is locked",
+              hint: "Start a new conversation to continue.",
+            }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      }
     }
     return res;
   } catch (error: any) {
@@ -91,8 +142,8 @@ const handler = async (req: Request) => {
         message: error?.message || "Unknown error",
         requestId,
         hint: isProduction
-          ? "Set INTELLIGENCE_API_KEY, LANGGRAPH_DEPLOYMENT_URL, and GEMINI_API_KEY in Vercel env vars."
-          : "Ensure the LangGraph agent is running locally (npm run dev:agent)."
+          ? "Set INTELLIGENCE_API_KEY, LANGGRAPH_DEPLOYMENT_URL, and MCP_SERVER_URL in Vercel env vars."
+          : "Ensure the LangGraph agent is running locally (npm run dev:agent).",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );

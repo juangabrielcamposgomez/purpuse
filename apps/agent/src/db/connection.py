@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 _CONSTANTS_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "constants.json"
+_IS_PRODUCTION = os.getenv("AGENT_ENV") == "production"
 
 
 def _load_pillar_keys() -> list[str]:
@@ -56,10 +57,11 @@ def _get_pool():
             _pool = False
             return None
 
-        dsn = (
-            os.getenv("DATABASE_URL")
-            or "postgresql://intelligence:intelligence@localhost:5432/intelligence_app"
-        )
+        dsn = os.getenv("DATABASE_URL")
+        if not dsn:
+            if _IS_PRODUCTION:
+                raise RuntimeError("DATABASE_URL is required in production")
+            dsn = "postgresql://intelligence:intelligence@localhost:5432/intelligence_app"
         try:
             import psycopg
             # Quick connectivity check with short timeout

@@ -30,6 +30,8 @@ from dotenv import load_dotenv
 sys.path.append(str(Path(__file__).parent / "src"))
 
 from intelligence_cleanup import wipe_orphan_threads
+
+_IS_PRODUCTION = os.getenv("AGENT_ENV") == "production"
 from lead_store import boot_status as _lead_store_boot_status
 from notion_tools import load_notion_tools
 from db_tools import load_db_tools
@@ -78,6 +80,9 @@ def _format_integration_status() -> str:
 
 backend_tools = load_notion_tools() + load_db_tools()
 _integration_status = _format_integration_status()
+if not _IS_PRODUCTION:
+    wipe_orphan_threads()
+
 SYSTEM_PROMPT = build_system_prompt(_integration_status)
 
 selected_runtime = _select_runtime()

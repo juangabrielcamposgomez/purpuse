@@ -62,6 +62,9 @@ def wipe_orphan_threads(*, agent_id: str = AGENT_ID) -> None:
     delete-marker columns are either all NULL or all non-NULL, so the
     UPDATE sets all three.
     """
+    if os.getenv("AGENT_ENV") == "production":
+        return  # LangGraph Cloud manages threads in production
+
     try:
         # Lazy import: psycopg is only needed for this cleanup; if it's
         # missing we surface a clear pointer instead of breaking boot.
